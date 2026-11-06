@@ -63,6 +63,33 @@ builds, with TypeScript declarations for each entry point.
 - **Contract ABIs** — generated ABI JSON from `bytechain-contracts`, consumed by
   the frontend and indexer instead of being duplicated.
 
+### Response contracts
+
+| Type | Backend endpoint |
+|---|---|
+| `AuthResponseDto` | `POST /auth/register`, `POST /auth/login` |
+| `RefreshTokenResponseDto` | `POST /auth/refresh` |
+| `MessageResponseDto` | logout, forgot-password, reset-password |
+| `CourseResponseDto` | `GET /courses`, `GET /courses/:id` |
+| `CourseListResponseDto` | `GET /courses` |
+| `LessonResponseDto` | lesson endpoints |
+| `LessonListResponseDto` | `GET /lessons`, `GET /lessons/course/:courseId` |
+| `EnrollmentStatusResponseDto` | `GET /courses/:id/enrollment-status` |
+| `CourseRegistrationResponseDto` | `POST /courses/:id/enroll` |
+| `EnrolledCourseResponseDto` | `GET /courses/enrolled` |
+| `PaginatedResponse<T>` | generic list envelope |
+| `UserRole` | `user` / `admin` enum |
+
+```ts
+import type {
+  AuthResponseDto,
+  CourseListResponseDto,
+  CourseResponseDto,
+  LessonResponseDto,
+  PaginatedResponse,
+} from "@weacademy/bytechain-shared";
+```
+
 ### Dates on the wire
 
 JSON has no `Date` type. All timestamp fields in the response contracts are
