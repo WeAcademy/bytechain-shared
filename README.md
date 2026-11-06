@@ -1,82 +1,111 @@
 # bytechain-shared
 
-Shared TypeScript types, contract ABIs, and API response interfaces used across all ByteChain Academy repos. This package is the single source of truth for all type contracts between services.
+Shared TypeScript types, API response contracts and contract ABIs used across
+the ByteChain Academy repositories. This package is the single source of truth
+for type contracts between services.
 
 ## Part of the ByteChain Academy multi-repo ecosystem
 
 | Repo | Purpose |
 |------|---------|
-| [bytechain-academy-frontend](https://github.com/WeAcademy/bytechain-academy-frontend) | Next.js web app — UI for students, tutors, and admins |
+| [bytechain-academy-frontend](https://github.com/WeAcademy/bytechain-academy-frontend) | Next.js web app — UI for students, tutors and admins |
 | [bytechain-academy-backend](https://github.com/WeAcademy/bytechain-academy-backend) | NestJS REST API — auth, courses, progress, DAO, certificates |
-| [bytechain-currency-hub](https://github.com/WeAcademy/bytechain-currency-hub) | Standalone crypto currency history data service |
+| [bytechain-currency-hub](https://github.com/WeAcademy/bytechain-currency-hub) | Standalone crypto currency history service |
 | [bytechain-contracts](https://github.com/WeAcademy/bytechain-contracts) | Smart contracts — DAO governance, SBT certificates, reward token |
 | [bytechain-indexer](https://github.com/WeAcademy/bytechain-indexer) | On-chain event listener that syncs blockchain state to the backend |
-| **bytechain-shared** (this repo) | Shared TypeScript types and contract ABIs used across all repos |
+| **bytechain-shared** (this repo) | Shared TypeScript types, API contracts and contract ABIs |
 
----
+## Installation
 
-## What lives here
+The package is published to GitHub Packages under the `@weacademy` scope.
+Configure the registry once per consuming repository:
 
-### TypeScript types
-Shared interfaces and types that are consumed by multiple repos so they never drift out of sync:
+```bash
+# .npmrc (or an equivalent `npm config set` command)
+@weacademy:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
 
-- `User`, `Course`, `Lesson`, `Quiz`, `Progress`, `Certificate` — core domain entities
-- - `DAOProposal`, `DAOVote` — governance types
-  - - `CurrencyEntry`, `HistoricalDataPoint` — currency hub types
-    - - API request/response types (DTOs) to keep frontend and backend contracts aligned
-     
-      - ### Contract ABIs
-      - Auto-generated ABI JSON files exported from [bytechain-contracts](https://github.com/WeAcademy/bytechain-contracts) after compilation. Both the frontend (for wallet interactions via wagmi/viem) and the indexer (for event listening) import ABIs from here rather than duplicating them.
-     
-      - - `ByteChainDAO.abi.json`
-        - - `ByteChainCertificate.abi.json`
-          - - `ByteChainToken.abi.json`
-           
-            - ---
+Then install it:
 
-            ## Planned package structure
+```bash
+npm install @weacademy/bytechain-shared
+```
 
-            ```
-            bytechain-shared/
-            ├── src/
-            │   ├── types/
-            │   │   ├── user.types.ts
-            │   │   ├── course.types.ts
-            │   │   ├── dao.types.ts
-            │   │   ├── currency.types.ts
-            │   │   └── index.ts
-            │   ├── abis/
-            │   │   ├── ByteChainDAO.abi.json
-            │   │   ├── ByteChainCertificate.abi.json
-            │   │   └── ByteChainToken.abi.json
-            │   └── index.ts
-            ├── package.json
-            └── tsconfig.json
-            ```
+During local development you can link the package instead:
 
-            ---
+```bash
+# In a consuming repository
+npm install ../bytechain-shared
+```
 
-            ## How other repos consume this package
+## Usage
 
-            Once published (as a GitHub Package or npm package), other repos install it as:
+```ts
+import type {
+  AuthResponseDto,
+  CourseResponseDto,
+  PaginatedResponse,
+} from "@weacademy/bytechain-shared";
 
-            ```bash
-            npm install @weacademy/bytechain-shared
-            ```
+const response = await fetch(`${API_URL}/api/v1/courses`);
+const courses = (await response.json()) as PaginatedResponse<CourseResponseDto>;
+```
 
-            Or during development, via a local workspace link:
+The package ships both ESM (`dist/index.js`) and CommonJS (`dist/index.cjs`)
+builds, with TypeScript declarations for each entry point.
 
-            ```bash
-            # In each consuming repo's package.json
-            "@weacademy/bytechain-shared": "file:../bytechain-shared"
-            ```
+### What lives here
 
-            ---
+- **Auth and course response contracts** — the wire shapes returned by the
+  backend for authentication, courses, lessons and enrolments.
+- **Pagination** — the shared `{ data, total, page, limit, totalPages }` shape.
+- **Contract ABIs** — generated ABI JSON from `bytechain-contracts`, consumed by
+  the frontend and indexer instead of being duplicated.
 
-            ## Contributing
+### Dates on the wire
 
-            See [CONTRIBUTING.md](https://github.com/WeAcademy/ByteChain-Academy/blob/main/CONTRIBUTING.md) for branch naming, PR standards, and the Drips Wave contribution workflow.
+JSON has no `Date` type. All timestamp fields in the response contracts are
+ISO-8601 strings (`2026-04-22T00:00:00.000Z`). Backend DTO classes construct
+`Date` values and Nest serialises them; consumers of `fetch` always receive
+strings, so the shared contracts describe strings.
 
-            ## License
+## Development
 
-            MIT
+```bash
+npm ci
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+```
+
+`npm run build` uses [tsup](https://tsup.egoist.dev/) to emit ESM, CJS and
+declaration files into `dist/`. The published tarball contains only `dist/`,
+`README.md` and `LICENSE`.
+
+### Scripts
+
+| Command | Description |
+|---|---|
+| `npm run build` | Bundle ESM + CJS and emit `.d.ts` files |
+| `npm run dev` | Rebuild on change |
+| `npm run lint` | ESLint (flat config, TypeScript rules) |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run test` | Vitest |
+| `npm run test:watch` | Vitest in watch mode |
+
+## Publishing
+
+Releases are published to GitHub Packages by the `Publish` workflow when a
+GitHub release is published. The workflow uses the repository `GITHUB_TOKEN`
+with `packages: write`; `publishConfig` pins the registry and public access.
+
+## Contributing
+
+See the [ByteChain Academy contribution guide](https://github.com/WeAcademy/ByteChain-Academy/blob/main/CONTRIBUTING.md)
+for branch naming, PR standards and the Drips Wave contribution workflow.
+
+## License
+
+MIT
